@@ -7,6 +7,27 @@ const app = express();
 
 app.use(express.json());
 
+app.use(function (req, res, next) {
+  // Website you wish to allow to connect
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // Request methods you wish to allow
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+
+  // Request headers you wish to allow
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.setHeader("Access-Control-Allow-Credentials", true);
+
+  // Pass to next layer of middleware
+  next();
+});
+
 const authMiddleware = (req, res, next) => {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) {
@@ -41,12 +62,17 @@ app.get("/admin", authMiddleware, (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  // res.setHeader("Access-Control-Allow-Origin", "*");
+  // res.setHeader("Access-Control-Allow-Methods", "POST");
+  // res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // res.setHeader("Access-Control-Allow-Credentials", true);
+
   const user = users.find((u) => u.email === req.body.email);
   if (!user) {
     return res.sendStatus(401); // nieatoryzowany
   }
   const payload = user;
-  const token = jwt.sign(payload, ACCESS_TOKEN, { expiresIn: "15s" });
+  const token = jwt.sign(payload, ACCESS_TOKEN, { expiresIn: "3m" });
   const refreshToken = jwt.sign(payload, REFRESH_TOKEN);
   refreshTokens.push(refreshToken);
 
@@ -65,7 +91,7 @@ app.post("/refresh-token", (req, res) => {
     }
     const payload = { id: data.id, name: data.name, email: data.email };
     const newAccessToken = jwt.sign(payload, ACCESS_TOKEN, {
-      expiresIn: "15s",
+      expiresIn: "3m",
     });
     res.json({ token: newAccessToken });
   });
@@ -77,4 +103,4 @@ app.delete("/logout", (req, res) => {
   res.sendStatus(204);
 });
 
-app.listen(3000, () => console.log("Serwer dziala"));
+app.listen(8000, () => console.log("Serwer dziala"));
